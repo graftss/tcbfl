@@ -48,7 +48,7 @@ class Track {
 
     this.t = 0;
     this.scrollSpeed = scrollSpeed;
-    this.tMax = ranges.reduce((tMax, range) => Math.max(tMax, range[1] + 0.1));
+    this.tMax = ranges.reduce((tMax, range) => Math.max(tMax, range[1] + 1));
 
     this.notes = [];
     ranges.forEach(range => this.processInputRange(range));
@@ -80,17 +80,25 @@ class Track {
     ctx.fillRect(targetX, y, targetW, h);
   }
 
+  cullTrack(ctx) {
+    const { x, y, w, h } = this;
+    ctx.clearRect(x + w, y, 600, h);
+  }
+
   draw(ctx) {
     this.notes.forEach(note => note.draw(ctx));
     this.drawTarget(ctx);
+    this.cullTrack(ctx);
     this.drawFrame(ctx);
   }
 
   update(dt) {
     this.t += dt;
-    this.notes.forEach(note => note.update(dt));
 
-    this.notes = this.notes.filter(note => note.endTime > this.t);
+    if (this.t > this.tMax || !this.notes || !this.notes.length) return;
+
+    this.notes.forEach(note => note.update(dt));
+    this.notes = this.notes.filter(note => note.endTime > this.t - 0.3);
   }
 }
 
@@ -123,8 +131,8 @@ class App {
 
     this.ctx = canvas.getContext('2d');
 
-
     this.track = new Track(this.ctx, 5, 5, 500, 75, 300);
+
     this.form = new Form(
       values => this.track.setConfig(values),
       () => {
@@ -132,6 +140,7 @@ class App {
         this.track.reset();
       },
     );
+
     this.track.setConfig(this.form.parse());
 
     document.addEventListener('keydown', e => {
@@ -143,8 +152,8 @@ class App {
 
   update(dt) {
     const { ctx, track } = this;
-    track.update(dt);
 
+    track.update(dt);
     ctx.clearRect(0, 0, 800, 600);
     track.draw(ctx);
   }
