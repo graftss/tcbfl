@@ -86,10 +86,13 @@ class Track {
   }
 
   draw(ctx) {
-    this.notes.forEach(note => note.draw(ctx));
-    this.drawTarget(ctx);
-    this.cullTrack(ctx);
-    this.drawFrame(ctx);
+    if (this.notes.length > 0) {
+      ctx.clearRect(0, 0, 800, 600);
+      this.notes.forEach(note => note.draw(ctx));
+      this.drawTarget(ctx);
+      this.cullTrack(ctx);
+      this.drawFrame(ctx);
+    }
   }
 
   update(dt) {
@@ -97,8 +100,13 @@ class Track {
 
     if (this.t > this.tMax || !this.notes || !this.notes.length) return;
 
-    this.notes.forEach(note => note.update(dt));
-    this.notes = this.notes.filter(note => note.endTime > this.t - 0.3);
+    for (let i = this.notes.length - 1; i >= 0; i--) {
+      const note = this.notes[i];
+      note.update(dt);
+      if (note.endTime < this.t - 0.3) {
+        this.notes.splice(i, 1);
+      }
+    }
   }
 }
 
@@ -131,30 +139,32 @@ class App {
 
     this.ctx = canvas.getContext('2d');
 
-    this.track = new Track(this.ctx, 5, 5, 500, 75, 300);
-
     this.form = new Form(
       values => this.track.setConfig(values),
-      () => {
-        this.track.setConfig(this.form.parse());
-        this.track.reset();
-      },
+      () => this.resetTrack(),
     );
 
-    this.track.setConfig(this.form.parse());
-
     document.addEventListener('keydown', e => {
-      if (e.key === 'g') {
-        this.track.reset();
-      }
+      if (e.key === 'g') this.resetTrack();
     });
+
+    this.track = this.newTrack();
+  }
+
+  newTrack() {
+    return new Track(this.ctx, 5, 5, 500, 75, 300);
+  }
+
+  resetTrack() {
+    this.track = this.newTrack();
+    this.track.setConfig(this.form.parse());
+    this.track.reset();
   }
 
   update(dt) {
     const { ctx, track } = this;
 
     track.update(dt);
-    ctx.clearRect(0, 0, 800, 600);
     track.draw(ctx);
   }
 }
@@ -178,5 +188,6 @@ const loop = (f) => {
   requestAnimationFrame(loopedF);
 };
 
-loop(dt => app.update(dt));
 
+
+loop(dt => app.update(dt));
