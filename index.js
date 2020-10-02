@@ -69,8 +69,8 @@ class Track {
     const { x, y, w, h } = this;
 
     ctx.strokeStyle = 'black';
-    ctx.lineWidth = 3;
-    ctx.rect(x + 0.5, y + 0.5, w, h);
+    ctx.lineWidth = 4;
+    ctx.rect(x, y, w, h);
     ctx.stroke();
   }
 
@@ -160,7 +160,7 @@ class App {
   }
 
   newTrack() {
-    return new Track(this.ctx, 5, 5, 500, 75, 300);
+    return new Track(this.ctx, 4, 4, 500, 76, 300);
   }
 
   resetTrack() {
@@ -195,7 +195,5 @@ const loop = (f) => {
 
   requestAnimationFrame(loopedF);
 };
-
-
 
 loop(dt => app.update(dt));
