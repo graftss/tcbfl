@@ -34,6 +34,7 @@ class Track {
     this.w = w;
     this.h = h;
     this.notes = [];
+    this.drawnStats = { time: 0 };
 
     this.targetX = x + Math.floor(w * 0.85);
     this.targetW = 3;
@@ -85,10 +86,14 @@ class Track {
     ctx.clearRect(x + w, y, 600, h);
   }
 
+  clear(ctx) {
+    ctx.clearRect(0, 0, 800, 600);
+  }
+
   draw(ctx) {
     if (this.notes.length > 0) {
-      ctx.clearRect(0, 0, 800, 600);
-      this.notes.forEach(note => note.draw(ctx));
+      this.clear(ctx);
+      for (let i = 0; i < this.notes.length; i++) this.notes[i].draw(ctx);
       this.drawTarget(ctx);
       this.cullTrack(ctx);
       this.drawFrame(ctx);
@@ -107,6 +112,8 @@ class Track {
         this.notes.splice(i, 1);
       }
     }
+
+    if (this.notes.length == 0) this.clear(this.ctx);
   }
 }
 
@@ -124,6 +131,7 @@ class Note {
 
   draw(ctx) {
     const { x, y, w, h, fill } = this;
+    if (x + w < 0) return;
     ctx.fillStyle = fill;
     ctx.fillRect(x, y, w, h);
   }
