@@ -2,11 +2,49 @@
 <html>
 <head>
   <title>TCBFL (Tool Creating Best Freebie Luck)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    #form {
+      position: fixed;
+      top: 200px;
+    }
+
+    #culler {
+      position: fixed;
+      background: white;
+      z-index: 19;
+    }
+
+    #target {
+      position: fixed;
+      border-left: 3px solid red;
+      width: 0px;
+      z-index: 10;
+    }
+
+    #note {
+      position: fixed;
+      background-color: green;
+      z-index: 5;
+    }
+
+    #frame {
+      position: fixed;
+      border: 2px solid black;
+      z-index: 20;
+    }
+  </style>
 </head>
 <body>
-  <div><canvas id="canvas" width="800" height="200"></canvas></div>
-  <div>
-    target input frames: <input id="ranges" type="text" value="60-65, 120-125, 240-245"><br>
+
+  <div class="game" id="target"></div>
+  <div class="game" id="note"></div>
+  <div class="game" id="frame"></div>
+  <div class="game" id="culler"></div>
+  <div id="form">
+    target input frames: <input id="ranges" type="text" value="100-120, 200-205"><br>
     offset to the left (in frames): <input id="offset" type="text" value="0"><br>
     scroll speed (in pixels per second): <input id="scrollSpeed" type="text" value="500"><br>
     <input id="save" type="button" value="save"> <input id="start" type="button" value="start (g)">

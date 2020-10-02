@@ -3,6 +3,14 @@ const GAME_FPS = 60;
 const parseRange = rangeStr => rangeStr.split('-').map(s => parseInt(s) / GAME_FPS);
 const parseRanges = str => str.split(/\s*,\s*/).map(parseRange);
 
+const px = 'px';
+const moveRect = (elt, x, y, w, h) => {
+  elt.style.left = x + px;
+  elt.style.top = y + px;
+  elt.style.width = w + px;
+  elt.style.height = h + px;
+}
+
 class Form {
   constructor(onSave, onStart) {
     this.elements = {
@@ -27,17 +35,21 @@ class Form {
 }
 
 class Track {
-  constructor(ctx, x, y, w, h) {
-    this.ctx = ctx;
+  constructor(x, y, w, h) {
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
     this.notes = [];
-    this.drawnStats = { time: 0 };
 
-    this.targetX = x + Math.floor(w * 0.85);
-    this.targetW = 3;
+    this.hidden = true;
+
+    this.frame = document.getElementById('frame');
+    this.target = document.getElementById('target');
+    this.note = document.getElementById('note');
+    this.culler = document.getElementById('culler');
+
+    this.setVisibility(false);
   }
 
   setConfig(config) {
@@ -45,11 +57,20 @@ class Track {
   }
 
   reset() {
+    const { x, y, w, h } = this;
     const { ranges, scrollSpeed } = this.config;
+
+    this.targetX = x + Math.floor(w * 0.85);
+
+    moveRect(this.frame, x, y, w, h);
+    moveRect(this.target, this.targetX, y, 0, h);
+    moveRect(this.culler, x + w, y, 200, h);
+    this.setVisibility(true);
 
     this.t = 0;
     this.scrollSpeed = scrollSpeed;
     this.tMax = ranges.reduce((tMax, range) => Math.max(tMax, range[1] + 1));
+    this.hidden = false;
 
     this.notes = [];
     ranges.forEach(range => this.processInputRange(range));
@@ -62,41 +83,22 @@ class Track {
     const noteX = targetX - scrollSpeed * end;
     const noteW = (end - start) * scrollSpeed;
 
-    this.notes.push(new Note(noteX, y, noteW, h, 'green', scrollSpeed, end));
+    this.notes.push(new Note(this.note, noteX, y, noteW, h, scrollSpeed, end));
   }
 
-  drawFrame(ctx) {
-    const { x, y, w, h } = this;
-
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = 4;
-    ctx.rect(x, y, w, h);
-    ctx.stroke();
+  setVisibility(visibility) {
+    const val = visibility ? 'visible' : 'hidden';
+    const elts = document.getElementsByClassName('game');
+    for (let i = 0; i < elts.length; i++) {
+      elts[i].style.visibility = val;
+    }
   }
 
-  drawTarget(ctx) {
-    const { targetX, targetW, y, h } = this;
-
-    ctx.fillStyle = 'red';
-    ctx.fillRect(targetX, y, targetW, h);
-  }
-
-  cullTrack(ctx) {
-    const { x, y, w, h } = this;
-    ctx.clearRect(x + w, y, 600, h);
-  }
-
-  clear(ctx) {
-    ctx.clearRect(0, 0, 800, 600);
-  }
-
-  draw(ctx) {
+  draw() {
     if (this.notes.length > 0) {
-      this.clear(ctx);
-      for (let i = 0; i < this.notes.length; i++) this.notes[i].draw(ctx);
-      this.drawTarget(ctx);
-      this.cullTrack(ctx);
-      this.drawFrame(ctx);
+      this.notes[0].draw();
+    } else if (!this.hidden) {
+      this.setVisibility(false);
     }
   }
 
@@ -112,28 +114,25 @@ class Track {
         this.notes.splice(i, 1);
       }
     }
-
-    if (this.notes.length == 0) this.clear(this.ctx);
   }
 }
 
 // notes move in the x direction
 class Note {
-  constructor(x, y, w, h, fill, v, endTime) {
+  constructor(elt, x, y, w, h, v, endTime) {
+    this.elt = elt;
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
-    this.fill = fill;
     this.v = v;
     this.endTime = endTime;
   }
 
   draw(ctx) {
-    const { x, y, w, h, fill } = this;
+    const { x, y, w, h } = this;
     if (x + w < 0) return;
-    ctx.fillStyle = fill;
-    ctx.fillRect(x, y, w, h);
+    moveRect(this.elt, x, y, w, h);
   }
 
   update(dt) {
@@ -143,10 +142,6 @@ class Note {
 
 class App {
   constructor() {
-    const canvas = document.getElementById('canvas');
-
-    this.ctx = canvas.getContext('2d');
-
     this.form = new Form(
       values => this.track.setConfig(values),
       () => this.resetTrack(),
@@ -160,7 +155,7 @@ class App {
   }
 
   newTrack() {
-    return new Track(this.ctx, 4, 4, 500, 76, 300);
+    return new Track(4, 4, 500, 76, 300);
   }
 
   resetTrack() {
@@ -170,10 +165,8 @@ class App {
   }
 
   update(dt) {
-    const { ctx, track } = this;
-
-    track.update(dt);
-    track.draw(ctx);
+    this.track.update(dt);
+    this.track.draw();
   }
 }
 
