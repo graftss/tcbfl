@@ -9,11 +9,25 @@ const moveRect = (elt, x, y, w, h) => {
   elt.style.top = y + px;
   elt.style.width = w + px;
   elt.style.height = h + px;
-}
+};
+
+const DEFAULT_PRESETS = [
+  { name: 'kg/gg (claude)', frames: "995-998, 1649-1652, 2097-2100,  2470-2473, 2747-2750" },
+  { name: 'kg/gg (mill)', frames: '994-997, 1646-1649, 2093-2096, 2464-2467, 2742-2745' },
+  { name: 'nimbus', frames: '2845-2849' },
+];
+
+const presentToSelectItem = preset => {
+  const result = document.createElement('option');
+  result.text = preset.name;
+  result.preset = preset;
+  return result;
+};
 
 class Form {
   constructor(onSave, onStart) {
     this.elements = {
+      presets: document.getElementById('presets'),
       ranges: document.getElementById('ranges'),
       offset: document.getElementById('offset'),
       scrollSpeed: document.getElementById('scrollSpeed'),
@@ -23,6 +37,16 @@ class Form {
 
     this.elements.save.onclick = () => onSave(this.parse());
     this.elements.start.onclick = onStart;
+
+    DEFAULT_PRESETS.forEach(preset => {
+      this.elements.presets.add(presentToSelectItem(preset));
+    });
+
+    this.elements.presets.onchange = (e) => {
+      const idx = e.target.selectedIndex;
+      const opt = this.elements.presets.options[idx];
+      this.elements.ranges.value = opt.preset.frames;
+    };
   }
 
   parse() {
