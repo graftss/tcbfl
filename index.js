@@ -49,12 +49,26 @@ class Form {
     };
   }
 
+  setValues(values) {
+    if (values.ranges !== undefined) this.elements.ranges.value = values.ranges;
+    if (values.offset !== undefined) this.elements.offset.value = values.offset;
+    if (values.scrollSpeed !== undefined) this.elements.scrollSpeed.value = values.scrollSpeed;
+  }
+
+  getValues() {
+    return {
+      ranges: this.elements.ranges.value,
+      offset: this.elements.offset.value,
+      scrollSpeed: this.elements.scrollSpeed.value,
+    };
+  }
+
   parse() {
     return {
       ranges: parseRanges(this.elements.ranges.value),
       offset: parseFloat(this.elements.offset.value) / GAME_FPS,
       scrollSpeed: parseFloat(this.elements.scrollSpeed.value),
-    }
+    };
   }
 }
 
@@ -167,9 +181,15 @@ class Note {
 class App {
   constructor() {
     this.form = new Form(
-      values => this.track.setConfig(values),
+      values => {
+        this.persistConfig();
+        this.track.setConfig(values)
+      },
       () => this.resetTrack(),
     );
+
+    const savedValues = window.localStorage.getItem('tcbfl');
+    if (savedValues !== null) this.form.setValues(JSON.parse(savedValues));
 
     document.addEventListener('keydown', e => {
       if (e.key === 'g') this.resetTrack();
@@ -182,8 +202,13 @@ class App {
     return new Track(4, 4, 500, 76, 300);
   }
 
+  persistConfig() {
+    window.localStorage.setItem('tcbfl', JSON.stringify(this.form.getValues()));
+  }
+
   resetTrack() {
     this.track = this.newTrack();
+    this.persistConfig();
     this.track.setConfig(this.form.parse());
     this.track.reset();
   }
