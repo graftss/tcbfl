@@ -12,7 +12,7 @@ const moveRect = (elt, x, y, w, h) => {
 };
 
 const DEFAULT_PRESETS = [
-  { name: 'kg/gg (claude)', frames: "995-998, 1649-1652, 2097-2100,  2470-2473, 2747-2750" },
+  { name: 'kg/gg (claude)', frames: "998-1001, 1649-1652, 2097-2100,  2470-2473, 2747-2750" },
   { name: 'kg/gg (mill)', frames: '994-997, 1646-1649, 2093-2096, 2464-2467, 2742-2745' },
   { name: 'nimbus', frames: '2845-2849' },
 ];
