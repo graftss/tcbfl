@@ -33,6 +33,8 @@ class Form {
       scrollSpeed: document.getElementById('scrollSpeed'),
       save: document.getElementById('save'),
       start: document.getElementById('start'),
+      gutter: document.getElementById('gutter'),
+      noGutter: document.getElementById('noGutter'),
     };
 
     this.elements.save.onclick = () => onSave(this.parse());
@@ -43,10 +45,13 @@ class Form {
     });
 
     this.elements.presets.onchange = (e) => {
-      const idx = e.target.selectedIndex;
-      const opt = this.elements.presets.options[idx];
-      this.elements.ranges.value = opt.preset.frames;
+      this.setRangeFromPreset(e.target.selectedIndex);
     };
+  }
+
+  setRangeFromPreset(idx) {
+    const opt = this.elements.presets.options[idx];
+    this.elements.ranges.value = opt.preset.frames;
   }
 
   setValues(values) {
@@ -60,6 +65,7 @@ class Form {
       ranges: this.elements.ranges.value,
       offset: this.elements.offset.value,
       scrollSpeed: this.elements.scrollSpeed.value,
+      gutter: this.elements.gutter.checked,
     };
   }
 
@@ -68,6 +74,7 @@ class Form {
       ranges: parseRanges(this.elements.ranges.value),
       offset: parseFloat(this.elements.offset.value) / GAME_FPS,
       scrollSpeed: parseFloat(this.elements.scrollSpeed.value),
+      gutter: this.elements.gutter.checked,
     };
   }
 }
@@ -95,10 +102,13 @@ class Track {
   }
 
   reset() {
-    const { x, y, w, h } = this;
-    const { ranges, scrollSpeed } = this.config;
+    const { x, y, h } = this;
+    const { ranges, scrollSpeed, gutter } = this.config;
 
-    this.targetX = x + Math.floor(w * 0.85);
+    this.targetX = x + Math.floor(this.w * 0.85);
+
+    const w = gutter ? this.w : Math.floor(this.w * 0.85);
+    this.w = w;
 
     moveRect(this.frame, x, y, w, h);
     moveRect(this.target, this.targetX, y, 0, h);
