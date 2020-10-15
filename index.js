@@ -92,7 +92,6 @@ class Form {
   }
 
   setValues(values) {
-    if (values.ranges !== undefined) this.elements.ranges.value = values.ranges;
     if (values.offset !== undefined) this.elements.offset.value = values.offset;
     if (values.scrollSpeed !== undefined) this.elements.scrollSpeed.value = values.scrollSpeed;
 
