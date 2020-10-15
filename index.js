@@ -73,7 +73,7 @@ class Form {
     this.elements.saveSettings.value = "save settings";
   }
 
-  loadSelectedPreset() {
+  loadSelectedPreset(e) {
     const idx = this.elements.presets.selectedIndex;
     const opt = this.elements.presets.options[idx];
     this.elements.ranges.value = opt.preset.frames;
@@ -85,9 +85,11 @@ class Form {
   }
 
   markInputsDirty() {
+    this.elements.presets.blur();
+
     const btn = this.elements.loadPreset;
     btn.disabled = false;
-    btn.value = "load preset";
+    btn.value = "load preset (enter)";
     btn.style.backgroundColor = "red";
   }
 
@@ -241,6 +243,7 @@ class App {
 
     document.addEventListener('keydown', e => {
       if (e.key === 'g') this.resetTrack();
+      if (e.key === 'Enter') this.form.loadSelectedPreset();
     });
 
     this.track = this.newTrack();
