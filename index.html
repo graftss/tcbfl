@@ -44,15 +44,24 @@
   <div class="game" id="frame"></div>
   <div class="game" id="culler"></div>
   <div id="form">
-    frame presets: <select id="presets"></select><br>
-    target input frames: <input id="ranges" type="text"><br>
-    offset to the left (in frames): <input id="offset" type="text"><br>
-    scroll speed (in pixels per second): <input id="scrollSpeed" type="text" value="500"><br>
-    <input id="gutter" type="radio" name="gutter" value="gutter">
-      <label for="gutter">red line</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    <input id="noGutter" type="radio" name="gutter" value="noGutter" checked>
-      <label for="noGutter">no red line</label><br>
-    <input id="save" type="button" value="save"> <input id="start" type="button" value="start (g)"><br>
+    <div id="inputs">
+      frame presets: <select id="presets"></select>
+        <input id="loadPreset" type="button" value="load preset"><br>
+      target input frames: <input id="ranges" type="text"><br>
+      <input id="start" type="button" value="start (g)"><br>
+      <br><hr><br>
+    </div>
+
+    <div id="settings">
+      offset to the left (in frames): <input id="offset" type="number"><br>
+      scroll speed (in pixels per second): <input id="scrollSpeed" type="number" value="500"><br>
+      <input id="gutter" type="radio" name="gutter" value="gutter">
+        <label for="gutter">red line</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <input id="noGutter" type="radio" name="gutter" value="noGutter" checked>
+        <label for="noGutter">no red line</label><br>
+      <input id="saveSettings" type="button" disabled value="saved"><br>
+    </div>
+
 
   </div>
   <script src="index.js"></script>

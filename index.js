@@ -12,9 +12,9 @@ const moveRect = (elt, x, y, w, h) => {
 };
 
 const DEFAULT_PRESETS = [
-  { name: 'kg/gg (claude)', frames: "998-1001, 1649-1652, 2097-2100, 2470-2473, 2747-2750" },
   { name: 'kg/gg (mill)', frames: '993-996, 1645-1648, 2092-2095, 2464-2467, 2742-2745' },
   { name: 'nimbus (mill)', frames: '2845-2849' },
+  { name: 'kg/gg (claude)', frames: "998-1001, 1649-1652, 2097-2100, 2470-2473, 2747-2750" },
 ];
 
 const presentToSelectItem = preset => {
@@ -26,43 +26,82 @@ const presentToSelectItem = preset => {
 
 class Form {
   constructor(onSave, onStart) {
+    this.onSave = onSave;
+    this.onStart = onStart;
+
     this.elements = {
+      inputs: document.getElementById('inputs'),
+
       presets: document.getElementById('presets'),
+      loadPreset: document.getElementById('loadPreset'),
       ranges: document.getElementById('ranges'),
+      start: document.getElementById('start'),
+
+      settings: document.getElementById('settings'),
+
+      saveSettings: document.getElementById('saveSettings'),
       offset: document.getElementById('offset'),
       scrollSpeed: document.getElementById('scrollSpeed'),
-      save: document.getElementById('save'),
-      start: document.getElementById('start'),
       gutter: document.getElementById('gutter'),
       noGutter: document.getElementById('noGutter'),
     };
 
-    this.elements.save.onclick = () => onSave(this.parse());
+    this.elements.settings.onchange = this.markSettingsDirty.bind(this);
+    this.elements.settings.onkeydown = this.markSettingsDirty.bind(this);
+    this.elements.saveSettings.onclick = this.saveSettings.bind(this);
+
     this.elements.start.onclick = onStart;
 
     DEFAULT_PRESETS.forEach(preset => {
       this.elements.presets.add(presentToSelectItem(preset));
     });
 
-    this.elements.presets.onchange = (e) => {
-      this.setRangeFromPreset(e.target.selectedIndex);
-    };
+    this.elements.loadPreset.onclick = this.loadSelectedPreset.bind(this);
+    this.elements.inputs.onchange = this.markInputsDirty.bind(this);
+    this.elements.inputs.onkeydown = this.markInputsDirty.bind(this);
+    this.markInputsDirty();
   }
 
-  setRangeFromPreset(idx) {
+  saveSettings() {
+    this.elements.saveSettings.disabled = true;
+    this.elements.saveSettings.value = "saved";
+    this.onSave(this.parse());
+  }
+
+  markSettingsDirty() {
+    this.elements.saveSettings.disabled = false;
+    this.elements.saveSettings.value = "save settings";
+  }
+
+  loadSelectedPreset() {
+    const idx = this.elements.presets.selectedIndex;
     const opt = this.elements.presets.options[idx];
     this.elements.ranges.value = opt.preset.frames;
+
+    const btn = this.elements.loadPreset;
+    btn.disabled = true;
+    btn.value = "loaded";
+    btn.style.backgroundColor = null;
+  }
+
+  markInputsDirty() {
+    const btn = this.elements.loadPreset;
+    btn.disabled = false;
+    btn.value = "load preset";
+    btn.style.backgroundColor = "red";
   }
 
   setValues(values) {
     if (values.ranges !== undefined) this.elements.ranges.value = values.ranges;
     if (values.offset !== undefined) this.elements.offset.value = values.offset;
     if (values.scrollSpeed !== undefined) this.elements.scrollSpeed.value = values.scrollSpeed;
+
+    this.elements.gutter.checked = values.gutter === true;
+    this.elements.noGutter.checked = values.gutter !== true;
   }
 
-  getValues() {
+  getPersistedValues() {
     return {
-      ranges: this.elements.ranges.value,
       offset: this.elements.offset.value,
       scrollSpeed: this.elements.scrollSpeed.value,
       gutter: this.elements.gutter.checked,
@@ -213,7 +252,7 @@ class App {
   }
 
   persistConfig() {
-    window.localStorage.setItem('tcbfl', JSON.stringify(this.form.getValues()));
+    window.localStorage.setItem('tcbfl', JSON.stringify(this.form.getPersistedValues()));
   }
 
   resetTrack() {
