@@ -15,6 +15,7 @@ const DEFAULT_PRESETS = [
   { name: 'kg/gg (mill)', frames: '993-996, 1645-1648, 2092-2095, 2464-2467, 2742-2745' },
   { name: 'nimbus (mill)', frames: '2845-2849' },
   { name: 'kg/gg (claude)', frames: "998-1001, 1649-1652, 2097-2100, 2470-2473, 2747-2750" },
+  { name: 'kg/gg (easy)', frames: "2291-2300, 2678-2683, 2969-2976, 4022-4031" },
 ];
 
 const presentToSelectItem = preset => {
@@ -50,7 +51,7 @@ class Form {
     this.elements.settings.onkeydown = this.markSettingsDirty.bind(this);
     this.elements.saveSettings.onclick = this.saveSettings.bind(this);
 
-    this.elements.start.onclick = onStart;
+    this.elements.start.onclick = this.startTrack.bind(this);
 
     DEFAULT_PRESETS.forEach(preset => {
       this.elements.presets.add(presentToSelectItem(preset));
@@ -60,6 +61,10 @@ class Form {
     this.elements.inputs.onchange = this.markInputsDirty.bind(this);
     this.elements.inputs.onkeydown = this.markInputsDirty.bind(this);
     this.markInputsDirty();
+  }
+
+  startTrack() {
+
   }
 
   saveSettings() {
