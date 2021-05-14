@@ -52,7 +52,7 @@ class Form {
     this.elements.settings.onkeydown = this.markSettingsDirty.bind(this);
     this.elements.saveSettings.onclick = this.saveSettings.bind(this);
 
-    this.elements.start.onclick = this.startTrack.bind(this);
+    this.elements.start.onclick = this.onStart();
 
     DEFAULT_PRESETS.forEach(preset => {
       this.elements.presets.add(presentToSelectItem(preset));
@@ -62,10 +62,6 @@ class Form {
     this.elements.inputs.onchange = this.markInputsDirty.bind(this);
     this.elements.inputs.onkeydown = this.markInputsDirty.bind(this);
     this.markInputsDirty();
-  }
-
-  startTrack() {
-
   }
 
   saveSettings() {
