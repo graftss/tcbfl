@@ -52,7 +52,7 @@ class Form {
     this.elements.settings.onkeydown = this.markSettingsDirty.bind(this);
     this.elements.saveSettings.onclick = this.saveSettings.bind(this);
 
-    this.elements.start.onclick = this.onStart();
+    this.elements.start.onclick = this.onStart;
 
     DEFAULT_PRESETS.forEach(preset => {
       this.elements.presets.add(presentToSelectItem(preset));
