@@ -11,26 +11,30 @@
       top: 200px;
     }
 
-    #culler {
+    .game {
+      position: fixed;
+    }
+
+    .culler {
       position: fixed;
       background: white;
       z-index: 19;
     }
 
-    #target {
+    .target {
       position: fixed;
       border-left: 3px solid red;
       width: 0px;
       z-index: 10;
     }
 
-    #note {
+    .note {
       position: fixed;
       background-color: green;
       z-index: 5;
     }
 
-    #frame {
+    .frame {
       position: fixed;
       border: 2px solid black;
       z-index: 20;
@@ -38,11 +42,6 @@
   </style>
 </head>
 <body>
-
-  <div class="game" id="target"></div>
-  <div class="game" id="note"></div>
-  <div class="game" id="frame"></div>
-  <div class="game" id="culler"></div>
   <div id="form">
     <div id="inputs">
       frame presets: <select id="presets"></select>

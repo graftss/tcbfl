@@ -1,14 +1,12 @@
 const GAME_FPS = 60;
 
-const parseRange = rangeStr => rangeStr.split('-').map(s => parseInt(s) / GAME_FPS);
-const parseRanges = str => str.split(/\s*,\s*/).map(parseRange);
-
-const px = 'px';
-const moveRect = (elt, x, y, w, h) => {
-  elt.style.left = x + px;
-  elt.style.top = y + px;
-  elt.style.width = w + px;
-  elt.style.height = h + px;
+const STRS = {
+  START_BTN_OFF: 'start (g)',
+  START_BTN_ON: 'running',
+  PRESET_LOADED: 'preset loaded',
+  LOAD_PRESET: 'load preset (enter)',
+  BTN_COLOR_POS: 'lightgreen',
+  BTN_COLOR_NEG: 'red',
 };
 
 const DEFAULT_PRESETS = [
@@ -19,7 +17,33 @@ const DEFAULT_PRESETS = [
   { name: 'nimbus (mill)', frames: '2845-2849' },
 ];
 
-const presentToSelectItem = preset => {
+// parse a list of comma-separated frame ranges, e.g. "123-127, 392-395"
+const parseRanges = str => str.split(/\s*,\s*/).map(parseRange);
+const parseRange = rangeStr => rangeStr.split('-').map(s => parseInt(s) / GAME_FPS);
+
+const px = 'px';
+const moveRect = (elt, x, y, w, h) => {
+  elt.style.left = x + px;
+  elt.style.top = y + px;
+  elt.style.width = w + px;
+  elt.style.height = h + px;
+};
+
+// returns the element with id `id`, if it already exists.
+// if it doesn't, creates an element with that id and returns it.
+const getTrackElt = (id, eltClass) => {
+  const findResult = document.getElementById(id);
+  if (findResult !== null) return findResult;
+
+  const result = document.createElement('div');
+  document.body.insertBefore(result, document.getElementById('form'));
+  result.id = id;
+  result.classList.add('game');
+  result.classList.add(eltClass);
+  return result;
+};
+
+const presetToSelectItem = preset => {
   const result = document.createElement('option');
   result.text = preset.name;
   result.preset = preset;
@@ -55,13 +79,19 @@ class Form {
     this.elements.start.onclick = this.onStart;
 
     DEFAULT_PRESETS.forEach(preset => {
-      this.elements.presets.add(presentToSelectItem(preset));
+      this.elements.presets.add(presetToSelectItem(preset));
     });
 
     this.elements.loadPreset.onclick = this.loadSelectedPreset.bind(this);
     this.elements.inputs.onchange = this.markInputsDirty.bind(this);
     this.elements.inputs.onkeydown = this.markInputsDirty.bind(this);
     this.markInputsDirty();
+  }
+
+  updateStartBtn(text, enabled) {
+    this.elements.start.value = text;
+    this.elements.start.disabled = !enabled;
+    this.elements.start.style.backgroundColor = enabled ? '' : STRS.BTN_COLOR_POS;
   }
 
   saveSettings() {
@@ -82,8 +112,8 @@ class Form {
 
     const btn = this.elements.loadPreset;
     btn.disabled = true;
-    btn.value = "loaded";
-    btn.style.backgroundColor = null;
+    btn.value = STRS.PRESET_LOADED;
+    btn.style.backgroundColor = STRS.BTN_COLOR_POS;
   }
 
   markInputsDirty() {
@@ -91,7 +121,7 @@ class Form {
 
     const btn = this.elements.loadPreset;
     btn.disabled = false;
-    btn.value = "load preset (enter)";
+    btn.value = STRS.LOAD_PRESET;
     btn.style.backgroundColor = "red";
   }
 
@@ -119,22 +149,26 @@ class Form {
       gutter: this.elements.gutter.checked,
     };
   }
+
+  end
 }
 
 class Track {
-  constructor(x, y, w, h) {
+  constructor(id, x, y, w, h, onTrackEnd) {
+    this.id = id;
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
+    this.onTrackEnd = onTrackEnd;
     this.notes = [];
 
-    this.hidden = true;
+    this.running = false;
 
-    this.frame = document.getElementById('frame');
-    this.target = document.getElementById('target');
-    this.note = document.getElementById('note');
-    this.culler = document.getElementById('culler');
+    this.frame = getTrackElt('frame' + id, 'frame');
+    this.target = getTrackElt('target' + id, 'target');
+    this.note = getTrackElt('note' + id, 'note');
+    this.culler = getTrackElt('culler' + id, 'culler');
 
     this.setVisibility(false);
   }
@@ -143,7 +177,7 @@ class Track {
     this.config = config;
   }
 
-  reset() {
+  run() {
     const { x, y, h } = this;
     const { ranges, scrollSpeed, gutter } = this.config;
 
@@ -154,13 +188,13 @@ class Track {
 
     moveRect(this.frame, x, y, w, h);
     moveRect(this.target, this.targetX, y, 0, h);
-    moveRect(this.culler, x + w, y, 200, h);
+    moveRect(this.culler, x + w, y, window.innerWidth, h);
     this.setVisibility(true);
 
     this.t = 0;
     this.scrollSpeed = scrollSpeed;
     this.tMax = ranges.reduce((tMax, range) => Math.max(tMax, range[1] + 1));
-    this.hidden = false;
+    this.running = true;
 
     this.notes = [];
     ranges.forEach(range => this.processInputRange(range));
@@ -187,8 +221,10 @@ class Track {
   draw() {
     if (this.notes.length > 0) {
       this.notes[0].draw();
-    } else if (!this.hidden) {
+    } else if (this.running) {
       this.setVisibility(false);
+      this.onTrackEnd();
+      this.running = false;
     }
   }
 
@@ -232,43 +268,72 @@ class Note {
 
 class App {
   constructor() {
-    this.form = new Form(
-      values => {
-        this.persistConfig();
-        this.track.setConfig(values)
-      },
-      () => this.resetTrack(),
-    );
+    this.onFormSave = this.onFormSave.bind(this);
+    this.onRunBtnDown = this.onRunBtnDown.bind(this);
+    this.onTrackEnd = this.onTrackEnd.bind(this);
+
+    this.form = new Form(this.onFormSave, this.onRunBtnDown);
 
     const savedValues = window.localStorage.getItem('tcbfl');
     if (savedValues !== null) this.form.setValues(JSON.parse(savedValues));
 
     document.addEventListener('keydown', e => {
-      if (e.key === 'g') this.resetTrack();
+      if (e.key === 'g') this.onRunBtnDown();
       if (e.key === 'Enter') this.form.loadSelectedPreset();
     });
 
-    this.track = this.newTrack();
+    this.numTracks = 2;
+    this.initTracks();
   }
 
-  newTrack() {
-    return new Track(4, 4, 500, 76, 300);
+  onFormSave(values) {
+    this.persistConfig();
+    this.tracks.forEach(track => track.setConfig(values));
+  }
+
+  onRunBtnDown() {
+    this.startTracks();
+    this.form.updateStartBtn(STRS.START_BTN_ON, false);
+  }
+
+  onTrackEnd() {
+    this.form.updateStartBtn(STRS.START_BTN_OFF, true);
   }
 
   persistConfig() {
     window.localStorage.setItem('tcbfl', JSON.stringify(this.form.getPersistedValues()));
   }
 
-  resetTrack() {
-    this.track = this.newTrack();
+  newTrack(index) {
+    const padding = 10;
+    const width = 500;
+    const height = 76;
+    const x = 4;
+    const y = 4 + (height + padding) * index;
+    return new Track(index, x, y, width, height, this.onTrackEnd);
+  }
+
+  initTracks() {
+    this.tracks = [];
+    for (let i = 0; i < this.numTracks; i++) {
+      this.tracks.push(this.newTrack(i));
+    }
+  }
+
+  startTracks() {
+    this.initTracks();
     this.persistConfig();
-    this.track.setConfig(this.form.parse());
-    this.track.reset();
+    this.tracks.forEach(track => {
+      track.setConfig(this.form.parse());
+      track.run();
+    });
   }
 
   update(dt) {
-    this.track.update(dt);
-    this.track.draw();
+    this.tracks.forEach(track => {
+      track.update(dt);
+      track.draw();
+    });
   }
 }
 
