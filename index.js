@@ -7,6 +7,8 @@ const STRS = {
   LOAD_PRESET: 'load preset (enter)',
   BTN_COLOR_POS: 'lightgreen',
   BTN_COLOR_NEG: '#ff7777',
+  INPUT_COLOR_NEG: '#ff9999',
+  DEFAULT_NOTE_COLOR: '#00ff00',
 };
 
 const DIMS = {
@@ -16,18 +18,23 @@ const DIMS = {
   TRACK_PADDING: 10,
 }
 
+const SINGLE_COLOR = ['#00ff00'];
+
 const DEFAULT_PRESETS = [
-  { name: 'kg/gg (2 RC)', frames: ["2291-2300, 2678-2683, 2971-2976, 4000-4029"] },
-  { name: 'kg/gg (3 RC)', frames: ['2291-2300, 2678-2683, 2971-2976, 3753-3760'] },
-  { name: 'kg/gg (4 RC)', frames: ['998-1001, 1651-1654, 2098-2101, 2470-2473, 2747-2750'] },
-  { name: 'kg/gg (4 RC, mill)', frames: ['993-996, 1645-1648, 2092-2095, 2464-2467, 2742-2745'] },
-  { name: 'nimbus (mill)', frames: ['2845-2849'] },
-  { name: 'testerino', frames: ['30-40, 50-60', '1-100', '2-50']}
+  { name: 'kg/gg (2 RC)', frames: ["2291-2300, 2678-2683, 2971-2976, 4000-4029"], colors: SINGLE_COLOR },
+  { name: 'kg/gg (3 RC)', frames: ['2291-2300, 2678-2683, 2971-2976, 3753-3760'], colors: SINGLE_COLOR },
+  { name: 'kg/gg (4 RC)', frames: ['998-1001, 1651-1654, 2098-2101, 2470-2473, 2747-2750'], colors: SINGLE_COLOR },
+  { name: 'kg/gg (4 RC, mill)', frames: ['993-996, 1645-1648, 2092-2095, 2464-2467, 2742-2745'], colors: SINGLE_COLOR },
+  { name: 'nimbus (mill)', frames: ['2845-2849'], colors: SINGLE_COLOR },
+  { name: 'testerino', frames: ['30-40, 100-120', '50-100', '60-75, 110-140'], colors: ['#ff0000', '#00ff00', '#0000ff'] },
 ];
 
 // parse a list of comma-separated frame ranges, e.g. "123-127, 392-395"
 const parseRanges = str => str.split(/\s*,\s*/).map(parseRange);
-const parseRange = rangeStr => rangeStr.split('-').map(s => parseInt(s) / GAME_FPS);
+const parseRange = rangeStr => rangeStr.split('-').map(s => {
+  const frames = parseInt(s);
+  return isNaN(frames) ? null : frames / GAME_FPS;
+});
 
 const px = 'px';
 const moveRect = (elt, x, y, w, h) => {
@@ -68,6 +75,7 @@ class Form {
 
       inputs: document.getElementById('inputs'),
       rangeInputs: [],
+      colorInputs: [],
 
       addTrack: document.getElementById('addtrack'),
       deleteTrack: document.getElementById('deletetrack'),
@@ -107,6 +115,19 @@ class Form {
   }
 
   onRunBtnDown() {
+    const invalidRangeInputs = this.parseRangeInputs().map(ranges => {
+      return ranges.some(r => r.some(e => e === null));
+    });
+
+    let foundInvalid = false;
+
+    invalidRangeInputs.forEach((isInvalid, i) => {
+      if (isInvalid) foundInvalid = true;
+      this.elements.rangeInputs[i].style.backgroundColor = isInvalid ? STRS.INPUT_COLOR_NEG : '';
+    });
+
+    if (foundInvalid) return;
+
     this.elements.rangeInputs.forEach(elt => elt.disabled = true);
     this.updateStartBtn(STRS.START_BTN_ON, false);
     this.elements.addTrack.disabled = true;
@@ -136,23 +157,37 @@ class Form {
     return `range${index}`;
   }
 
+  colorInputId(index) {
+    return `range${index}color`;
+  }
+
   updateRangeInputElts(oldNum, newNum) {
+    const defaultColor = STRS.DEFAULT_NOTE_COLOR;
+
     // record the text currently in the range inputs
-    const oldValues = this.elements.rangeInputs.map(elt => elt.value);
+    const oldRanges = this.elements.rangeInputs.map(elt => elt.value);
+    const oldColors = this.elements.colorInputs.map(elt => elt.value);
 
     let innerHtml = '';
-    const ids = [];
+    const rangeIds = [];
+    const colorIds = [];
     for (let i = 0; i < newNum; i++) {
       const id = this.rangeInputId(i);
-      ids.push(id);
-      innerHtml += `track ${i+1} frames: <input id="${id}" type="text"><br>`
+      rangeIds.push(id);
+      const colorId = this.colorInputId(i);
+      colorIds.push(colorId);
+
+      innerHtml += `track ${i+1} frames: <input id="${id}" type="text"> color: <input id="${colorId}" type="color" value="${defaultColor}"> <br>`
     }
 
     this.elements.ranges.innerHTML = innerHtml;
 
     // save a reference to each range input element
-    this.elements.rangeInputs = ids.map(id => document.getElementById(id));
-    this.elements.rangeInputs.forEach((elt, i) => elt.value = oldValues[i] || '');
+    this.elements.rangeInputs = rangeIds.map(id => document.getElementById(id));
+    this.elements.rangeInputs.forEach((elt, i) => elt.value = oldRanges[i] || '');
+
+    this.elements.colorInputs = colorIds.map(id => document.getElementById(id));
+    this.elements.colorInputs.forEach((elt, i) => elt.value = oldColors[i] || defaultColor);
   }
 
   updateStartBtn(text, enabled) {
@@ -179,6 +214,10 @@ class Form {
     this.setNumTracks(opt.preset.frames.length);
     opt.preset.frames.forEach((ranges, i) => {
       this.elements.rangeInputs[i].value = ranges;
+    });
+
+    opt.preset.colors.forEach((color, i) => {
+      this.elements.colorInputs[i].value = color || STRS.DEFAULT_NOTE_COLOR;
     });
 
     const btn = this.elements.loadPreset;
@@ -220,6 +259,7 @@ class Form {
     return {
       numTracks: this.numTracks,
       ranges: this.parseRangeInputs(),
+      color: this.elements.colorInputs.map(elt => elt.value),
       offset: parseFloat(this.elements.offset.value) / GAME_FPS,
       scrollSpeed: parseFloat(this.elements.scrollSpeed.value),
       gutter: this.elements.gutter.checked,
@@ -253,7 +293,7 @@ class Track {
 
   run() {
     const { x, y, h } = this;
-    const { ranges, scrollSpeed, gutter } = this.config;
+    const { ranges, scrollSpeed, gutter, color } = this.config;
 
     this.targetX = x + Math.floor(this.w * 0.85);
 
@@ -264,6 +304,8 @@ class Track {
     moveRect(this.target, this.targetX, y, 0, h);
     moveRect(this.culler, x + w, y, window.innerWidth, h);
     this.setVisibility(true);
+
+    this.note.style.backgroundColor = color;
 
     this.t = 0;
     this.scrollSpeed = scrollSpeed;
@@ -316,7 +358,7 @@ class Track {
     for (let i = this.notes.length - 1; i >= 0; i--) {
       const note = this.notes[i];
       note.update(dt);
-      if (note.endTime < this.t - 0.3) {
+      if (note.endTime < this.t - 0.2) {
         this.notes.splice(i, 1);
       }
     }
@@ -414,7 +456,7 @@ class App {
 
     this.tracks.forEach((track, i) => {
       // Extract each track's ranges from the form's array.
-      const trackConfig = { ...formConfig, ranges: formConfig.ranges[i] };
+      const trackConfig = { ...formConfig, ranges: formConfig.ranges[i], color: formConfig.color[i] };
       track.setConfig(trackConfig);
       track.run();
     });
