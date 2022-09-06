@@ -92,6 +92,7 @@ class Form {
       scrollSpeed: document.getElementById('scrollSpeed'),
       gutter: document.getElementById('gutter'),
       noGutter: document.getElementById('noGutter'),
+      gutterColor: document.getElementById('gutterColor'),
     };
 
     this.elements.settings.onchange = this.markSettingsDirty.bind(this);
@@ -241,6 +242,8 @@ class Form {
 
     this.elements.gutter.checked = values.gutter === true;
     this.elements.noGutter.checked = values.gutter !== true;
+
+    if (values.gutterColor !== undefined) this.elements.gutterColor.value = values.gutterColor;
   }
 
   getPersistedValues() {
@@ -248,6 +251,7 @@ class Form {
       offset: this.elements.offset.value,
       scrollSpeed: this.elements.scrollSpeed.value,
       gutter: this.elements.gutter.checked,
+      gutterColor: this.elements.gutterColor.value,
     };
   }
 
@@ -263,6 +267,7 @@ class Form {
       offset: parseFloat(this.elements.offset.value) / GAME_FPS,
       scrollSpeed: parseFloat(this.elements.scrollSpeed.value),
       gutter: this.elements.gutter.checked,
+      gutterColor: this.elements.gutterColor.value,
     };
   }
 }
@@ -306,6 +311,7 @@ class Track {
     this.setVisibility(true);
 
     this.note.style.backgroundColor = color;
+    this.target.style.borderLeftColor = this.config.gutterColor;
 
     this.t = 0;
     this.scrollSpeed = scrollSpeed;
@@ -338,7 +344,7 @@ class Track {
     this.culler.remove();
     this.frame.remove();
     this.note.remove();
-    this.culler.remove();
+    if (this.target) this.target.remove();
   }
 
   draw() {

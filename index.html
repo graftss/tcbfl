@@ -54,12 +54,17 @@
     </div>
 
     <div id="settings">
-      offset to the left (in frames): <input id="offset" type="number"><br>
+      track offset to the left (in frames): <input id="offset" type="number" value=5><br>
       scroll speed (in pixels per second): <input id="scrollSpeed" type="number" value="500"><br>
-      <input id="gutter" type="radio" name="gutter" value="gutter">
-        <label for="gutter">red line</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      target position: 
       <input id="noGutter" type="radio" name="gutter" value="noGutter" checked>
-        <label for="noGutter">no red line</label><br>
+        <label for="noGutter">track edge</label>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <input id="gutter" type="radio" name="gutter" value="gutter">
+        <label for="gutter">line with color:</label>
+        &nbsp;
+      <input id="gutterColor" type="color" value="#ff0000">
+      <br>
       <input id="saveSettings" type="button" disabled value="saved"><br>
     </div>
 
